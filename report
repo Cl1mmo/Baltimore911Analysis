@@ -1,0 +1,69 @@
+import pandas as pd
+import numpy as np
+
+# Load the dataset
+file_path = 'Baltimore911.csv'
+df = pd.read_csv(file_path)
+
+# Function to profile the dataset
+def dataset_profile(df):
+    profile = {}
+
+    # Basic information
+    profile['Total number of call instances (rows)'] = df.shape[0]
+    profile['Total number of call features (columns)'] = df.shape[1]
+
+    # Columns profiling
+    column_profiles = []
+    for col in df.columns:
+        col_profile = {}
+        col_profile['Column Name'] = col
+        col_profile['Data Type'] = df[col].dtype
+        
+        # Numeric columns
+        if pd.api.types.is_numeric_dtype(df[col]):
+            col_profile['Type'] = 'Numeric'
+            col_profile['Min'] = df[col].min()
+            col_profile['Max'] = df[col].max()
+            col_profile['Mean'] = df[col].mean()
+            col_profile['Median'] = df[col].median()
+            col_profile['Standard Deviation'] = df[col].std()
+            col_profile['Missingness (%)'] = df[col].isnull().mean() * 100
+        
+        # Discrete columns (Categorical)
+        elif pd.api.types.is_categorical_dtype(df[col]) or df[col].dtype == 'object':
+            col_profile['Type'] = 'Discrete'
+            col_profile['Unique Values Count'] = df[col].nunique()
+            top_values = df[col].value_counts().head(3)
+            col_profile['Top 3 Most Frequent Values'] = top_values.index.tolist()
+            col_profile['Top 3 Frequencies'] = top_values.values.tolist()
+            col_profile['Missingness (%)'] = df[col].isnull().mean() * 100
+        
+        # Temporal columns
+        elif pd.api.types.is_datetime64_any_dtype(df[col]):
+            col_profile['Type'] = 'Temporal'
+            col_profile['Min Date'] = df[col].min()
+            col_profile['Max Date'] = df[col].max()
+            col_profile['Missingness (%)'] = df[col].isnull().mean() * 100
+
+        # Spatial columns (assuming lat/lon could be spatial data)
+        elif 'lat' in col.lower() or 'lon' in col.lower() or 'long' in col.lower():
+            col_profile['Type'] = 'Spatial'
+            col_profile['Min'] = df[col].min()
+            col_profile['Max'] = df[col].max()
+            col_profile['Missingness (%)'] = df[col].isnull().mean() * 100
+        
+        else:
+            col_profile['Type'] = 'Other'
+            col_profile['Missingness (%)'] = df[col].isnull().mean() * 100
+
+        column_profiles.append(col_profile)
+
+    profile['Column Profiles'] = column_profiles
+    return profile
+
+# Generate the profile for the dataset
+profile = dataset_profile(df)
+
+# Display the profile information
+import ace_tools as tools; tools.display_dataframe_to_user(name="Baltimore 911 Dataset Profile", dataframe=pd.DataFrame(profile['Column Profiles']))
